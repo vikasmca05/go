@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	middleware "samplewebapp/Middleware"
 
 	"github.com/gorilla/mux"
 )
@@ -27,16 +28,19 @@ func newRouter() *mux.Router {
 	// with "/assets/", instead of the absolute route itself
 	r.PathPrefix("/assets/").Handler(staticFileHandler).Methods("GET")
 
-	r.HandleFunc("/bird", getBirdHandler).Methods("GET")
-	r.HandleFunc("/bird", createBirdHandler).Methods("POST")
+	r.HandleFunc("/api/task", middleware.GetAllTask).Methods("GET")
+	r.HandleFunc("/api/task", middleware.CreateTask).Methods("POST")
 	return r
 }
 
 func main() {
+
 	// The router is now formed by calling the `newRouter` constructor function
 	// that we defined above. The rest of the code stays the same
 	r := newRouter()
-	http.ListenAndServe(":8080", r)
+
+	http.ListenAndServe(":8081", r)
+
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
