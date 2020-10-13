@@ -1,5 +1,7 @@
 # Sample Full Stack Application for AWS Cognito Integration
 
+## Refer blog for complete detail - https://justvikas.com/2020/10/13/aws-cognito-user-pool-integration-using-amplify-with-react-go/
+
 ## Tech Stack
 - React (frontend)
 - Go (Backend REST APIs)
