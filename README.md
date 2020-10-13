@@ -25,3 +25,12 @@
 ## Test Feature
 - Open developer tool in Chrome/ or other browser
 - Capture Console and Network logs
+- Home Page 
+ ![Home Page](https://github.com/vikasmca05/go/blob/master/Screen%20Shot%202020-10-12%20at%2010.04.49%20PM.png)
+- Click on SignIn with AWS button
+- It should launch Cognito Hosted Sign In Page.
+![Cognito Hosted Sign In Page](https://github.com/vikasmca05/go/blob/master/Screen%20Shot%202020-10-12%20at%2010.05.02%20PM.png)
+- Enter the User credentials in Sign In Page. User should already be created in Cognito User Pool. Username - test4@test.com, Pwd - Welcome123!
+![Sign In](https://github.com/vikasmca05/go/blob/master/Screen%20Shot%202020-10-12%20at%2010.05.17%20PM.png)
+- If successfully signed in then user will see option to "Check User", "Sign Out", "Get Task"
+- **Check User** : it will print the user details in Console for developer tools. **Sign Out** : It will sign out user from Cognito User pool. **Get Task** : It will call backend server with sample "Get" and "Post" call
