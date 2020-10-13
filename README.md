@@ -34,3 +34,9 @@
 ![Sign In](https://github.com/vikasmca05/go/blob/master/Screen%20Shot%202020-10-12%20at%2010.05.17%20PM.png)
 - If successfully signed in then user will see option to "Check User", "Sign Out", "Get Task"
 - **Check User** : it will print the user details in Console for developer tools. **Sign Out** : It will sign out user from Cognito User pool. **Get Task** : It will call backend server with sample "Get" and "Post" call
+- Check User : Console log
+![Check User](https://github.com/vikasmca05/go/blob/master/Screen%20Shot%202020-10-12%20at%2010.26.30%20PM.png)
+- Get Task : Console log
+![Get Task](https://github.com/vikasmca05/go/blob/master/Screen%20Shot%202020-10-12%20at%2010.28.14%20PM.png)
+- Get Task : Network log
+![Get Task](https://github.com/vikasmca05/go/blob/master/Screen%20Shot%202020-10-12%20at%2010.28.46%20PM.png)
