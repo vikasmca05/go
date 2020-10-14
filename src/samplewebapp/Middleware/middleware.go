@@ -2,12 +2,15 @@ package middleware
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
+	"github.com/lestrrat-go/jwx/jwk"
+
 	"github.com/dgrijalva/jwt-go"
-	"github.com/gorilla/context"
 )
 
 //Subscription struct
@@ -116,29 +119,111 @@ func insertOneTask(w http.ResponseWriter, r *http.Request, task Subscription) {
 // ValidateMiddleware method call
 func ValidateMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		log.Println("ValidateMiddleware method")
+
 		authorizationHeader := req.Header.Get("authorization")
 		if authorizationHeader != "" {
-			bearerToken := strings.Split(authorizationHeader, " ")
-			if len(bearerToken) == 2 {
-				token, error := jwt.Parse(bearerToken[1], func(token *jwt.Token) (interface{}, error) {
-					if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-						return nil, fmt.Errorf("There was an error")
-					}
-					return []byte("secret"), nil
-				})
-				if error != nil {
-					//json.NewEncoder(w).Encode(Exception{Message: error.Error()})
-					return
-				}
-				if token.Valid {
-					context.Set(req, "decoded", token.Claims)
-					next(w, req)
-				} else {
-					//json.NewEncoder(w).Encode(Exception{Message: "Invalid authorization token"})
-				}
+			log.Println("auth heder present")
+
+			bearerToken := strings.Split(authorizationHeader, "Bearer ")
+			//log.Println(bearerToken)
+
+			// AWS Cognito public keys are available at address:
+			// https://cognito-idp.{region}.amazonaws.com/{userPoolId}/.well-known/jwks.json
+			publicKeysURL := "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_njGiiHrUB/.well-known/jwks.json"
+
+			// Start with downloading public keys information
+			// The .Fetch method is used from https://github.com/lestrrat-go/jwx package
+			publicKeySet, err := jwk.Fetch(publicKeysURL)
+			if err != nil {
+				log.Println("failed to parse key: %s", err)
+				log.Printf("failed to parse key: %s", err)
 			}
-		} else {
-			//json.NewEncoder(w).Encode(Exception{Message: "An authorization header is required"})
+
+			// Get access token as string from *principal
+			// Access token is Base64-encoded JSON that contains user details - called "claims".
+			// ---
+			// Token is separated into 3 sections - header, payload and signature
+			// You can test and validate your token with jwt.io
+			tokenString := bearerToken[1]
+			log.Println(tokenString)
+			// We want to get details from the access token: client_id and unique user identifier.
+			// Let's add client_id. We can verify, if it match our App cliet ID in AWS Cognito User Pool
+			// We can also add user identifier (f.e. "username") to use it with our App
+			type AWSCognitoClaims struct {
+				Client_ID string `json:client_id`
+				Username  string `json:username`
+				jwt.StandardClaims
+			}
+
+			// JWT Parse - it's actually doing parsing, validation and returns back a token.
+			// Use .Parse or .ParseWithClaims methods from https://github.com/dgrijalva/jwt-go
+			token, err := jwt.ParseWithClaims(tokenString, &AWSCognitoClaims{}, func(token *jwt.Token) (interface{}, error) {
+
+				// Verify if the token was signed with correct signing method
+				// AWS Cognito is using RSA256 in my case
+				_, ok := token.Method.(*jwt.SigningMethodRSA)
+
+				if !ok {
+					log.Println("Unexpected signing method: %v", token.Header["alg"])
+
+					return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+				}
+				log.Println("signing method passed")
+
+				// Get "kid" value from token header
+				// "kid" is shorthand for Key ID
+				kid, ok := token.Header["kid"].(string)
+				if !ok {
+					log.Println("Kid header not found")
+
+					return nil, errors.New("kid header not found")
+				}
+				log.Println("kid header value = ")
+				log.Println(kid)
+
+				// Check client_id attribute from the access token
+				claims, ok := token.Claims.(*AWSCognitoClaims)
+				if !ok {
+					log.Println("Problem to get claims")
+
+					return nil, errors.New("There is problem to get claims")
+				}
+				log.Printf("client_id: %v", claims.Client_ID)
+				log.Println("Claims of client_id")
+
+				// "kid" must be present in the public keys set
+				keys := publicKeySet.LookupKeyID(kid)
+				if len(keys) == 0 {
+					log.Println("Key not found")
+
+					return nil, fmt.Errorf("key %v not found", kid)
+				}
+				log.Println("Key found")
+
+				// In our case, we are returning only one key = keys[0]
+				// Return token key as []byte{string} type
+				var tokenKey interface{}
+				if err := keys[0].Raw(&tokenKey); err != nil {
+					return nil, errors.New("failed to create token key")
+				}
+
+				return tokenKey, nil
+			})
+
+			if err != nil {
+				// This place can throw expiration error
+				log.Printf("token problem: %s", err)
+			}
+
+			// Check if token is valid
+			if !token.Valid {
+				log.Println("token is invalid")
+			}
+
 		}
+		next(w, req)
 	})
 }

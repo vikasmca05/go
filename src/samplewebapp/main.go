@@ -28,7 +28,7 @@ func newRouter() *mux.Router {
 	// with "/assets/", instead of the absolute route itself
 	r.PathPrefix("/assets/").Handler(staticFileHandler).Methods("GET")
 
-	r.HandleFunc("/api/task", (middleware.GetAllTask)).Methods("GET")
+	r.HandleFunc("/api/task", middleware.ValidateMiddleware(middleware.GetAllTask)).Methods("GET")
 	r.HandleFunc("/api/task", (middleware.CreateTask)).Methods("POST")
 	r.HandleFunc("/api/task", middleware.OptionsTask).Methods("OPTIONS")
 
