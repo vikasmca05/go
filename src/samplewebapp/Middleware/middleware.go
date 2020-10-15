@@ -153,8 +153,9 @@ func ValidateMiddleware(next http.HandlerFunc) http.HandlerFunc {
 			// Let's add client_id. We can verify, if it match our App cliet ID in AWS Cognito User Pool
 			// We can also add user identifier (f.e. "username") to use it with our App
 			type AWSCognitoClaims struct {
-				Client_ID string `json:client_id`
-				Username  string `json:username`
+				Client_ID string   `json:"email"`
+				Username  string   `json:"cognito:username"`
+				Groups    []string `json:"cognito:groups"`
 				jwt.StandardClaims
 			}
 
@@ -192,7 +193,22 @@ func ValidateMiddleware(next http.HandlerFunc) http.HandlerFunc {
 					return nil, errors.New("There is problem to get claims")
 				}
 				log.Printf("client_id: %v", claims.Client_ID)
-				log.Println("Claims of client_id")
+				log.Println("Claims Value - Expirest ")
+				log.Println((claims.StandardClaims.ExpiresAt))
+				log.Println("Claims Value - Audience ")
+				log.Println((claims.StandardClaims.Audience))
+				log.Println("Claims Value - Issuer ")
+				log.Println((claims.StandardClaims.Issuer))
+				log.Println("Claims Value - Subject ")
+				log.Println((claims.StandardClaims.Subject))
+				log.Println("Claims Value - Username ")
+				log.Println((claims.Username))
+				log.Println("Claims Value - Eail ")
+				log.Println(claims.Client_ID)
+				log.Println("Claims Value - Groups ")
+				log.Println(claims.Groups[0])
+
+				//w.Write([]byte(fmt.Sprintf("Welcome # %s !", claims.Username)))
 
 				// "kid" must be present in the public keys set
 				keys := publicKeySet.LookupKeyID(kid)
